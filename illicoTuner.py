@@ -232,21 +232,14 @@ def create_lineup():
 def credentials():
 	credentials_Info = {}
 	if request.method == 'POST':
-		credentials_File = Path("credentials.json")
-		if credentials_File.exists():
-			with open('credentials.json','r') as f:
-				credentials_Info = json.load(f)
-			USERNAME = credentials_Info['username']
-			PASSWORD = credentials_Info['password']
-		else:
-			USERNAME = ''
-			PASSWORD = ''
-			credentials_Info = {
-								'username' : USERNAME,
-								'password' : PASSWORD
-								}
-			with open("credentials.json","w") as f:
-				json.dump(credentials_Info, f, ensure_ascii=False)
+		USERNAME = request.form.get('username')
+		PASSWORD = request.form.get('password')
+		credentials_Info = {
+							'username' : USERNAME,
+							'password' : PASSWORD
+							}
+		with open("credentials.json","w") as f:
+			json.dump(credentials_Info, f, ensure_ascii=False)
 	return '''<form method="POST">
                   Username: <input type="text" name="username"><br>
                   Password: <input type="text" name="password"><br>
