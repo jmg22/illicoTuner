@@ -67,12 +67,12 @@ def get_ip():
         s.close()
         IP = 'http://' + IP
     return IP
-    
+
 discoverData = {
     'FriendlyName': 'illicoTuner',
     'Manufacturer' : 'Videotron',
-    'ModelNumber': 'HDTC-2US',
-    'FirmwareName': 'hdhomeruntc_atsc',
+    'ModelNumber': 'illicoWeb',
+    'FirmwareName': 'illico_cable',
     'TunerCount': int(config['tunerCount']),
     'FirmwareVersion': '20150826',
     'DeviceID': '87654321',
@@ -81,7 +81,15 @@ discoverData = {
     'LineupURL': '%s/lineup.json' % get_ip()
 }
 
-COOKIE = os.path.join('', 'cookie')
+#COOKIE = os.path.join('', 'cookie')
+user_config_dir = os.path.expanduser("~") + "/.illicoTuner"
+if not os.path.isdir(user_config_dir):
+    os.makedirs(user_config_dir, 0755)
+COOKIE = user_config_dir + "/cookie"
+CREDENTIALS = user_config_dir + "/credentials.json"
+ILLICOTUNER = user_config_dir + "/illicoTuner.json"
+ILLICOM3U = user_config_dir + "/illico.m3u"
+BASEURL = get_ip()
 COOKIE_JAR = cookielib.LWPCookieJar(COOKIE)
 DEBUG = 'true'
 PROXYPORT = 5024
@@ -132,9 +140,9 @@ def login():
 
 	url = 'https://id.videotron.com/oam/server/authentication'
 	credentials_Info = {}
-	credentials_File = Path("credentials.json")
+	credentials_File = Path(CREDENTIALS)
 	if credentials_File.exists():
-		with open('credentials.json','r') as f:
+		with open(CREDENTIALS,'r') as f:
 			credentials_Info = json.load(f)
 		USERNAME = credentials_Info['username']
 		PASSWORD = credentials_Info['password']
@@ -224,7 +232,7 @@ def create_lineup():
 			log("Get channel: %s" %title)
 			urlPid = URLHOST + '/channel/remuxed?pid=' + str(pid)
 			lineupTuner.append({'GuideNumber': str(pid), 'GuideName': title, 'URL': urlPid })
-	with open("illicoTuner.json","w") as f:
+	with open(ILLICOTUNER,"w") as f:
 		json.dump(lineupTuner, f, ensure_ascii=False)
 	return lineupTuner
 
@@ -238,7 +246,7 @@ def credentials():
 							'username' : USERNAME,
 							'password' : PASSWORD
 							}
-		with open("credentials.json","w") as f:
+		with open(CREDENTIALS,"w") as f:
 			json.dump(credentials_Info, f, ensure_ascii=False)
 	return '''<form method="POST">
                   Username: <input type="text" name="username"><br>
@@ -263,10 +271,10 @@ def status():
 
 @app.route('/lineup.json')
 def lineup():
-	json_File = Path("illicoTuner.json")
+	json_File = Path(ILLICOTUNER)
 	if not json_File.exists():
 		create_lineup()
-	with open('illicoTuner.json','r') as f:
+	with open(ILLICOTUNER,'r') as f:
 		json_Lineup = f.read()
 	return json_Lineup
 
@@ -334,7 +342,7 @@ def create_M3u_List():
 	jsonData, data = getRequest(url)
 	jsonData = (jsonData.encode('utf-8'))
 	channels = json.loads(jsonData)['body']['main']
-	with open("illico.m3u","w") as f:
+	with open(ILLICOM3U,"w") as f:
 		f.write("#EXTM3U" + "\n")
 	for channel in channels:
 		title = channel['name']
@@ -344,16 +352,34 @@ def create_M3u_List():
 			log("Get channel: %s" %title)
 			Channel_Title = "#EXTINF:-1 tvh-chnum=" + str(pid) + " ," + title
 			urlPid = URLHOST + "/channel?pid=" + str(pid)
-			with open("illico.m3u","a") as f:
+			with open(ILLICOM3U,"a") as f:
 				f.write(Channel_Title + "\n" + urlPid + "\n")
-	with open("illico.m3u","r") as f:
+	with open(ILLICOM3U,"r") as f:
 		m3u_File = f.read()
 	return m3u_File
 
 @app.route('/')
 @app.route('/device.xml')
 def device():
-    return render_template('device.xml',data = discoverData),{'Content-Type': 'application/xml'}
+	return """<root xmlns="urn:schemas-upnp-org:device-1-0">
+		<specVersion>
+			<major>1</major>
+			<minor>0</minor>
+		</specVersion>
+		<URLBase>{data}</URLBase>
+		<device>
+			<deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
+			<friendlyName>illicoTuner</friendlyName>
+			<manufacturer>Videotron</manufacturer>
+			<modelName>illicoWeb</modelName>
+			<modelNumber>illicoWeb</modelNumber>
+			<serialNumber></serialNumber>
+			<UDN>uuid:87654321</UDN>
+		</device>
+	</root>""".format(data = get_ip())
+    
+    
+    #return render_template('device.xml',data = discoverData),{'Content-Type': 'application/xml'}
 
 
 def get_Live_Url(pid):
