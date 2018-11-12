@@ -22,5 +22,10 @@ Go to your browser and
 
 - 127.0.0.1:5024/credentials (login info )
 
-- 127.0.0.1:5024/M3u.get (create m3u file )
+- 127.0.0.1:5024/M3u.get (create m3u file ) # The m3u file can be found in ~/.illicoTuner
 
+#### Plex Media Server
+
+FFMPEG is required: Linux: "sudo apt install ffmpeg jq" Win/Mac: https://ffmpeg.zeranoe.com/builds/
+
+Enter the IP of the host running illicoTuner including port 5024, eg.: 192.168.1.50:5024
